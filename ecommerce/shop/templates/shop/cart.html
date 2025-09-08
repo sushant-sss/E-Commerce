@@ -1,0 +1,107 @@
+{% extends "shop/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  body {
+    background-color: #f8f9fa;
+  }
+  h3 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 600;
+  }
+  #cartContainer .card {
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease;
+  }
+  #cartContainer .card:hover {
+    transform: scale(1.01);
+  }
+  #cartContainer h5 {
+    margin: 0;
+    font-size: 18px;
+  }
+  #cartContainer p {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 6px;
+  }
+  #cartContainer strong {
+    color: #007bff;
+    font-size: 16px;
+  }
+  #cartContainer input[type="number"] {
+    margin-right: 8px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 4px 6px;
+    text-align: center;
+  }
+  #cartContainer button {
+    margin: 2px;
+  }
+</style>
+
+<h3>Your Cart</h3>
+<div id="cartContainer"></div>
+
+<script>
+async function loadCart() {
+  const token = localStorage.getItem('access');
+  if (!token) { 
+    alert('Please login to view cart'); 
+    window.location.href='/login/'; 
+    return; 
+  }
+  const res = await fetch('/api/cart/', { headers: { Authorization: 'Bearer ' + token } });
+  if (!res.ok) { alert('Error'); return; }
+  const json = await res.json();
+  const container = document.getElementById('cartContainer');
+  container.innerHTML = '';
+  if (json.items.length === 0) {
+    return container.innerHTML = '<p class="text-center text-muted">Your cart is empty</p>';
+  }
+  json.items.forEach(ci => {
+    const div = document.createElement('div');
+    div.className = 'card mb-3 p-3';
+    div.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h5>${ci.item.title}</h5>
+          <p>${ci.item.description?.slice(0,80) || ''}</p>
+          <strong>₹ ${ci.item.price}</strong>
+        </div>
+        <div class="text-end">
+          <input type="number" style="width:80px" value="${ci.quantity}" min="1" id="q-${ci.id}">
+          <button class="btn btn-sm btn-outline-primary" onclick="updateQty(${ci.id})">Update</button>
+          <button class="btn btn-sm btn-danger" onclick="removeItem(${ci.id})">Remove</button>
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+async function updateQty(cartItemId) {
+  const token = localStorage.getItem('access');
+  const qty = document.getElementById('q-' + cartItemId).value;
+  await fetch('/api/cart/', {
+    method:'PATCH',
+    headers:{ 'Content-Type':'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ cart_item_id: cartItemId, quantity: qty })
+  });
+  loadCart();
+}
+
+async function removeItem(cartItemId) {
+  const token = localStorage.getItem('access');
+  await fetch('/api/cart/?cart_item_id=' + cartItemId, {
+    method:'DELETE', headers: { Authorization: 'Bearer ' + token }
+  });
+  loadCart();
+}
+
+window.onload = loadCart;
+</script>
+{% endblock %}

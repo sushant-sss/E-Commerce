@@ -1,0 +1,76 @@
+{% extends "shop/base.html" %}
+
+{% block content %}
+<style>
+  body {
+    background-color: #f8f9fa;
+  }
+  .card {
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  #signupForm {
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  #signupMessage {
+    font-size: 14px;
+    font-weight: 500;
+    color: #dc3545;
+  }
+</style>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2>Sign up</h2>
+    {% csrf_token %}
+    <form id="signupForm">
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input class="form-control" name="username" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" name="email">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" name="password" required>
+      </div>
+      <button class="btn btn-primary w-100">Create account</button>
+      <div id="signupMessage" class="mt-3"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('signupForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const payload = { 
+    username: f.username.value, 
+    email: f.email.value, 
+    password: f.password.value 
+  };
+  const res = await fetch('/api/register/', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const json = await res.json();
+  if (res.ok) {
+    document.getElementById('signupMessage').style.color = 'green';
+    document.getElementById('signupMessage').innerText = 'User created. Redirecting to login...';
+    setTimeout(()=> window.location.href='/login/', 1000);
+  } else {
+    document.getElementById('signupMessage').innerText = JSON.stringify(json);
+  }
+};
+</script>
+{% endblock %}
